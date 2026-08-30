@@ -10,16 +10,19 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Laptop, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
+
+const emptySubscribe = () => () => {};
 
 const ThemeSwitcher = () => {
-  const [mounted, setMounted] = useState(false);
+  // 서버에서는 항상 false, 클라이언트 하이드레이션 이후에만 true를 반환해
+  // effect 내 setState 없이 SSR/CSR 불일치를 안전하게 처리한다.
+  const mounted = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false,
+  );
   const { theme, setTheme } = useTheme();
-
-  // useEffect only runs on the client, so now we can safely show the UI
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   if (!mounted) {
     return null;
