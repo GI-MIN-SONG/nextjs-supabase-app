@@ -1,110 +1,70 @@
-<a href="https://demo-nextjs-with-supabase.vercel.app/">
-  <img alt="Next.js and Supabase Starter Kit - the fastest way to build apps with Next.js and Supabase" src="https://demo-nextjs-with-supabase.vercel.app/opengraph-image.png">
-  <h1 align="center">Next.js and Supabase Starter Kit</h1>
-</a>
+# 모임 이벤트 관리 웹
 
-<p align="center">
- The fastest way to build apps with Next.js and Supabase
-</p>
+모임 주최자가 공지·참여자 관리(RSVP)·정산(N빵)을 하나의 웹 도구에서 끝내도록 돕는 서비스입니다.
 
-<p align="center">
-  <a href="#features"><strong>Features</strong></a> ·
-  <a href="#demo"><strong>Demo</strong></a> ·
-  <a href="#deploy-to-vercel"><strong>Deploy to Vercel</strong></a> ·
-  <a href="#clone-and-run-locally"><strong>Clone and run locally</strong></a> ·
-  <a href="#feedback-and-issues"><strong>Feedback and issues</strong></a>
-  <a href="#more-supabase-examples"><strong>More Examples</strong></a>
-</p>
-<br/>
+## 🎯 프로젝트 개요
 
-## Features
+**목적**: 모임 주최자가 공지·참여자 관리(RSVP)·정산(N빵)을 혼자 도맡는 부담을 하나의 웹 도구로 줄여줍니다.
 
-- Works across the entire [Next.js](https://nextjs.org) stack
-  - App Router
-  - Pages Router
-  - Proxy
-  - Client
-  - Server
-  - It just works!
-- supabase-ssr. A package to configure Supabase Auth to use cookies
-- Password-based authentication block installed via the [Supabase UI Library](https://supabase.com/ui/docs/nextjs/password-based-auth)
-- Styling with [Tailwind CSS](https://tailwindcss.com)
-- Components with [shadcn/ui](https://ui.shadcn.com/)
-- Optional deployment with [Supabase Vercel Integration and Vercel deploy](#deploy-your-own)
-  - Environment variables automatically assigned to Vercel project
+**사용자**: 수영, 헬스, 친구 모임 등을 정기적으로 운영하는 개인 모임 주최자. 참여자는 회원가입 없이 공개 링크로만 참여합니다.
 
-## Demo
+자세한 요구사항은 [docs/PRD.md](./docs/PRD.md), 개발 진행 계획은 [docs/ROADMAP.md](./docs/ROADMAP.md)를 참고하세요.
 
-You can view a fully working demo at [demo-nextjs-with-supabase.vercel.app](https://demo-nextjs-with-supabase.vercel.app/).
+## 📱 주요 기능
 
-## Deploy to Vercel
+- **모임 공지 관리**: 모임 생성/조회/수정과 참여자 공개 링크 공유
+- **참여자 RSVP 관리**: 참여자가 회원가입 없이 공개 링크로 참석 여부를 응답하고, 개인 토큰으로 본인 응답만 수정
+- **정산(N빵)**: 총금액을 참여자 수로 나눠 1인당 분담액을 계산하고, 계좌 공유·입금 체크까지 처리
 
-Vercel deployment will guide you through creating a Supabase account and project.
+## 🛠️ 기술 스택
 
-After installation of the Supabase integration, all relevant environment variables will be assigned to the project so the deployment is fully functioning.
+- **Framework**: Next.js (App Router)
+- **Runtime**: React 19
+- **Language**: TypeScript
+- **Backend/DB**: Supabase (Auth, Postgres, RLS)
+- **Styling**: Tailwind CSS + shadcn/ui (new-york 스타일)
+- **Testing**: Vitest
+- **배포**: Vercel
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&project-name=nextjs-with-supabase&repository-name=nextjs-with-supabase&demo-title=nextjs-with-supabase&demo-description=This+starter+configures+Supabase+Auth+to+use+cookies%2C+making+the+user%27s+session+available+throughout+the+entire+Next.js+app+-+Client+Components%2C+Server+Components%2C+Route+Handlers%2C+Server+Actions+and+Middleware.&demo-url=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2F&external-id=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&demo-image=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2Fopengraph-image.png)
+## 🚀 시작하기
 
-The above will also clone the Starter kit to your GitHub, you can clone that locally and develop locally.
+### 사전 준비
 
-If you wish to just develop locally and not deploy to Vercel, [follow the steps below](#clone-and-run-locally).
+[Supabase 대시보드](https://database.new)에서 프로젝트를 생성합니다.
 
-## Clone and run locally
+### 환경 변수
 
-1. You'll first need a Supabase project which can be made [via the Supabase dashboard](https://database.new)
-
-2. Create a Next.js app using the Supabase Starter template npx command
-
-   ```bash
-   npx create-next-app --example with-supabase with-supabase-app
-   ```
-
-   ```bash
-   yarn create next-app --example with-supabase with-supabase-app
-   ```
-
-   ```bash
-   pnpm create next-app --example with-supabase with-supabase-app
-   ```
-
-3. Use `cd` to change into the app's directory
-
-   ```bash
-   cd with-supabase-app
-   ```
-
-4. Rename `.env.example` to `.env.local` and update the following:
+`.env.local`에 다음 두 값만 설정합니다(service-role 키는 사용하지 않습니다):
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=[INSERT SUPABASE PROJECT URL]
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=[INSERT SUPABASE PROJECT API PUBLISHABLE OR ANON KEY]
+NEXT_PUBLIC_SUPABASE_URL=[Supabase 프로젝트 URL]
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=[Supabase publishable/anon 키]
 ```
 
-> [!NOTE]
-> This example uses `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, which refers to Supabase's new **publishable** key format.
-> Both legacy **anon** keys and new **publishable** keys can be used with this variable name during the transition period. Supabase's dashboard may show `NEXT_PUBLIC_SUPABASE_ANON_KEY`; its value can be used in this example.
-> See the [full announcement](https://github.com/orgs/supabase/discussions/29260) for more information.
+두 값은 [Supabase 프로젝트의 API 설정](https://supabase.com/dashboard/project/_?showConnect=true)에서 확인할 수 있습니다.
 
-Both `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` can be found in [your Supabase project's API settings](https://supabase.com/dashboard/project/_?showConnect=true)
+### 로컬 실행
 
-5. You can now run the Next.js local development server:
+```bash
+npm install
+npm run dev
+```
 
-   ```bash
-   npm run dev
-   ```
+[localhost:3000](http://localhost:3000)에서 확인합니다.
 
-   The starter kit should now be running on [localhost:3000](http://localhost:3000/).
+### 품질 검사
 
-6. This template comes with the default shadcn/ui style initialized. If you instead want other ui.shadcn styles, delete `components.json` and [re-install shadcn/ui](https://ui.shadcn.com/docs/installation/next)
+```bash
+npm run lint         # ESLint
+npm run typecheck    # tsc --noEmit
+npm run test          # vitest run
+npm run format:check
+npm run build
+```
 
-> Check out [the docs for Local Development](https://supabase.com/docs/guides/getting-started/local-development) to also run Supabase locally.
+## 📖 문서
 
-## Feedback and issues
-
-Please file feedback and issues over on the [Supabase GitHub org](https://github.com/supabase/supabase/issues/new/choose).
-
-## More Supabase examples
-
-- [Next.js Subscription Payments Starter](https://github.com/vercel/nextjs-subscription-payments)
-- [Cookie-based Auth and the Next.js 13 App Router (free course)](https://youtube.com/playlist?list=PL5S4mPUpp4OtMhpnp93EFSo42iQ40XjbF)
-- [Supabase Auth and the Next.js App Router](https://github.com/supabase/supabase/tree/master/examples/auth/nextjs)
+- [PRD](./docs/PRD.md) — 상세 요구사항 및 데이터 모델
+- [로드맵](./docs/ROADMAP.md) — 개발 단계별 계획
+- [린 캔버스](./docs/LEANCANVAS.md) — 비즈니스 모델 개요
+- [개발 가이드](./CLAUDE.md) — Claude Code용 개발 지침

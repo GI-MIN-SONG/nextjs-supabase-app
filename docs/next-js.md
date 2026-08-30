@@ -106,4 +106,4 @@ npm run test         # vitest run (lib/ 순수 함수 대상)
 npm run format:check
 ```
 
-`npm run check-all`, `npm run build`는 CI에서 순서대로 실행되는 게이트다(`lint → typecheck → test → build`) — 로컬에서도 커밋 전 최소 `lint`, `typecheck`는 통과시킨다.
+`.github/workflows/ci.yml`은 `lint → typecheck → test → build` 순서로 개별 스크립트를 실행하는 게이트다 — 로컬에서도 커밋 전 최소 `lint`, `typecheck`는 통과시킨다.
