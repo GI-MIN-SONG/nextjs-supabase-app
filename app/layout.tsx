@@ -9,8 +9,8 @@ const defaultUrl = process.env.VERCEL_URL
 
 export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),
-  title: "Next.js and Supabase Starter Kit",
-  description: "The fastest way to build apps with Next.js and Supabase",
+  title: "모임 관리",
+  description: "모임 공지, 참여자 RSVP, 정산을 한 번에 관리하는 서비스",
 };
 
 const inter = Inter({
@@ -31,7 +31,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="ko" suppressHydrationWarning>
       <body
         className={`${inter.variable} ${newsreader.variable} font-sans antialiased`}
       >

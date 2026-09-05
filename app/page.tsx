@@ -1,57 +1,79 @@
-import { DeployButton } from "@/components/deploy-button";
-import { EnvVarWarning } from "@/components/env-var-warning";
-import { AuthButton } from "@/components/auth-button";
-import { Hero } from "@/components/hero";
-import { ThemeSwitcher } from "@/components/theme-switcher";
-import { ConnectSupabaseSteps } from "@/components/tutorial/connect-supabase-steps";
-import { SignUpUserSteps } from "@/components/tutorial/sign-up-user-steps";
-import { hasEnvVars } from "@/lib/utils";
 import Link from "next/link";
 import { Suspense } from "react";
 
+import { LogoutButton } from "@/components/logout-button";
+import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/server";
+
+async function HomeHeaderActions() {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+  const user = data?.claims;
+
+  return user ? (
+    <LogoutButton />
+  ) : (
+    <Button asChild size="sm" variant="outline">
+      <Link href="/auth/login">로그인</Link>
+    </Button>
+  );
+}
+
+async function HomeContent() {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+  const user = data?.claims;
+
+  if (user) {
+    return (
+      <div className="flex flex-col gap-3">
+        <p className="text-muted-foreground text-sm">
+          {user.email}님, 환영합니다.
+        </p>
+        <Button asChild size="lg">
+          <Link href="/protected/events">내 모임 목록 보기</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-4 text-center">
+      <h1 className="text-2xl !leading-tight font-bold">
+        모임 공지부터
+        <br />
+        정산까지 한 번에
+      </h1>
+      <p className="text-muted-foreground text-sm">
+        참여자 회원가입 없이 링크만 공유해서 참석 여부를 받고, N빵 정산까지
+        끝내보세요.
+      </p>
+      <div className="mt-4 flex flex-col gap-2">
+        <Button asChild size="lg">
+          <Link href="/auth/sign-up">시작하기</Link>
+        </Button>
+        <Button asChild size="lg" variant="outline">
+          <Link href="/auth/login">로그인</Link>
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center">
-      <div className="flex w-full flex-1 flex-col items-center gap-20">
-        <nav className="flex h-16 w-full justify-center border-b border-b-foreground/10">
-          <div className="flex w-full max-w-5xl items-center justify-between p-3 px-5 text-sm">
-            <div className="flex items-center gap-5 font-semibold">
-              <Link href={"/"}>Next.js Supabase Starter</Link>
-              <div className="flex items-center gap-2">
-                <DeployButton />
-              </div>
-            </div>
-            {!hasEnvVars ? (
-              <EnvVarWarning />
-            ) : (
-              <Suspense>
-                <AuthButton />
-              </Suspense>
-            )}
-          </div>
-        </nav>
-        <div className="flex max-w-5xl flex-1 flex-col gap-20 p-5">
-          <Hero />
-          <main className="flex flex-1 flex-col gap-6 px-4">
-            <h2 className="mb-4 text-xl font-medium">Next steps</h2>
-            {hasEnvVars ? <SignUpUserSteps /> : <ConnectSupabaseSteps />}
-          </main>
-        </div>
+    <main className="mx-auto flex min-h-svh w-full max-w-md flex-col">
+      <header className="flex items-center justify-between border-b p-4">
+        <span className="text-lg font-semibold">모임 관리</span>
+        <Suspense>
+          <HomeHeaderActions />
+        </Suspense>
+      </header>
 
-        <footer className="mx-auto flex w-full items-center justify-center gap-8 border-t py-16 text-center text-xs">
-          <p>
-            Powered by{" "}
-            <a
-              href="https://supabase.com/?utm_source=create-next-app&utm_medium=template&utm_term=nextjs"
-              target="_blank"
-              className="font-bold hover:underline"
-              rel="noreferrer"
-            >
-              Supabase
-            </a>
-          </p>
-          <ThemeSwitcher />
-        </footer>
+      <div className="flex flex-1 flex-col gap-8 p-5">
+        <Suspense>
+          <HomeContent />
+        </Suspense>
       </div>
     </main>
   );
