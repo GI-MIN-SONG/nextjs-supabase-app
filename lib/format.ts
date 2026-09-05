@@ -1,4 +1,4 @@
-import type { EventStatus } from "@/lib/types/event";
+import type { EventStatus, ParticipantStatus } from "@/lib/types/event";
 
 export function formatEventDateTime(iso: string): string {
   const date = new Date(iso);
@@ -22,4 +22,10 @@ export const eventStatusLabel: Record<EventStatus, string> = {
   open: "진행중",
   closed: "마감",
   cancelled: "취소",
+};
+
+export const participantStatusLabel: Record<ParticipantStatus, string> = {
+  attending: "참석",
+  not_attending: "불참",
+  pending: "미응답",
 };

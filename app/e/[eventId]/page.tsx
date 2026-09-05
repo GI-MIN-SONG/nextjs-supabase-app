@@ -1,4 +1,9 @@
+import { notFound } from "next/navigation";
 import { Suspense } from "react";
+
+import { RsvpForm } from "@/components/rsvp-form";
+import { formatEventDateTime } from "@/lib/format";
+import { createClient } from "@/lib/supabase/server";
 
 async function RsvpLandingContent({
   params,
@@ -7,9 +12,42 @@ async function RsvpLandingContent({
 }) {
   const { eventId } = await params;
 
-  // TODO(Task 008): eventId 모임 정보 표시 및 RSVP 제출 폼 구현
-  // TODO(Task 008): lib/supabase/proxy.ts에 /e/ 경로 인증 예외 추가 필요
-  return <p className="text-sm text-muted-foreground">{eventId}</p>;
+  const supabase = await createClient();
+  const { data: event } = await supabase
+    .from("events")
+    .select("*")
+    .eq("id", eventId)
+    .single();
+
+  if (!event) notFound();
+
+  const isDeadlinePassed =
+    !!event.rsvp_deadline && new Date() > new Date(event.rsvp_deadline);
+  const isOpen = event.status === "open" && !isDeadlinePassed;
+
+  return (
+    <div className="flex w-full flex-col gap-6">
+      <div className="flex flex-col gap-2 rounded-lg border p-4">
+        <h2 className="text-xl font-semibold">{event.title}</h2>
+        {event.location && (
+          <p className="text-muted-foreground text-sm">{event.location}</p>
+        )}
+        <p className="text-muted-foreground text-sm">
+          {formatEventDateTime(event.starts_at)}
+        </p>
+      </div>
+
+      {isOpen ? (
+        <RsvpForm eventId={eventId} />
+      ) : (
+        <p className="text-muted-foreground text-sm">
+          {event.status === "cancelled"
+            ? "취소된 모임입니다"
+            : "현재 응답을 받지 않는 모임입니다"}
+        </p>
+      )}
+    </div>
+  );
 }
 
 export default function RsvpLandingPage({
