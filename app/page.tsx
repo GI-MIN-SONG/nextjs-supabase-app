@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 
+import { BottomNav } from "@/components/bottom-nav";
 import { LogoutButton } from "@/components/logout-button";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
@@ -70,11 +71,15 @@ export default function Home() {
         </Suspense>
       </header>
 
-      <div className="flex flex-1 flex-col gap-8 p-5">
+      <div className="flex flex-1 flex-col gap-8 p-5 pb-20">
         <Suspense>
           <HomeContent />
         </Suspense>
       </div>
+
+      <Suspense>
+        <BottomNav />
+      </Suspense>
     </main>
   );
 }
