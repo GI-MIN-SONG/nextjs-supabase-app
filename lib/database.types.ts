@@ -14,6 +14,89 @@ export type Database = {
   }
   public: {
     Tables: {
+      events: {
+        Row: {
+          created_at: string
+          description: string | null
+          host_id: string
+          id: string
+          location: string | null
+          rsvp_deadline: string | null
+          starts_at: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          host_id: string
+          id?: string
+          location?: string | null
+          rsvp_deadline?: string | null
+          starts_at: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          host_id?: string
+          id?: string
+          location?: string | null
+          rsvp_deadline?: string | null
+          starts_at?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      participants: {
+        Row: {
+          access_token: string
+          created_at: string
+          event_id: string
+          id: string
+          is_excluded_from_settlement: boolean
+          name: string
+          note: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          access_token?: string
+          created_at?: string
+          event_id: string
+          id?: string
+          is_excluded_from_settlement?: boolean
+          name: string
+          note?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          event_id?: string
+          id?: string
+          is_excluded_from_settlement?: boolean
+          name?: string
+          note?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "participants_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -49,6 +132,89 @@ export type Database = {
           website?: string | null
         }
         Relationships: []
+      }
+      settlement_shares: {
+        Row: {
+          amount_due: number
+          id: string
+          is_paid: boolean
+          paid_at: string | null
+          participant_id: string
+          settlement_id: string
+        }
+        Insert: {
+          amount_due?: number
+          id?: string
+          is_paid?: boolean
+          paid_at?: string | null
+          participant_id: string
+          settlement_id: string
+        }
+        Update: {
+          amount_due?: number
+          id?: string
+          is_paid?: boolean
+          paid_at?: string | null
+          participant_id?: string
+          settlement_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "settlement_shares_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "settlement_shares_settlement_id_fkey"
+            columns: ["settlement_id"]
+            isOneToOne: false
+            referencedRelation: "settlements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      settlements: {
+        Row: {
+          account_holder: string | null
+          bank_account: string | null
+          created_at: string
+          event_id: string
+          id: string
+          memo: string | null
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          account_holder?: string | null
+          bank_account?: string | null
+          created_at?: string
+          event_id: string
+          id?: string
+          memo?: string | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          account_holder?: string | null
+          bank_account?: string | null
+          created_at?: string
+          event_id?: string
+          id?: string
+          memo?: string | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "settlements_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
