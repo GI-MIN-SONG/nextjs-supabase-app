@@ -49,6 +49,15 @@
 - 실제 신원 검증(예: `access_token` 일치)은 Server Action의 쿼리 조건(`WHERE id = ? AND access_token = ?`)에서 강제한다.
 - 이는 SELECT가 이미 공개되어 있는 리소스에 한해 적용 가능한 신뢰 경계다 — SELECT 자체가 비공개인 테이블에 이 패턴을 적용하지 않는다.
 
+### 알려진 잔여 위험: `participants` UPDATE RLS 전면 개방
+
+`participants_update_all` 정책은 컬럼/행 단위 제한 없이 `using (true)`로 전면 개방되어 있다. 즉 publishable key로 PostgREST를 직접 호출하면 Server Action의 `access_token` 검증을 완전히 우회해 **임의의 `participant_id`를 지정해 타인의 참여자 레코드(`status`/`note`/`is_excluded_from_settlement` 등)를 수정**할 수 있다 — 이는 위에서 설명한 신뢰 경계 밖의 시나리오다.
+
+이 위험은 MVP 단계에서 의도적으로 감수하는 것으로, 다음 재검토 지점을 둔다:
+
+- Task 008/009(참여자 공개 RSVP 제출/수정 Server Action 구현) 착수 시 실제 악용 가능성과 완화책(예: `GRANT UPDATE (status, note, is_excluded_from_settlement) ON participants TO anon`으로 컬럼 제한, 또는 RLS `qual`에 세션 변수 기반 `access_token` 비교 추가)을 재검토한다.
+- 완화책 적용 시에도 원격 프로덕션 DB에 대한 마이그레이션이므로 위 "DB 스키마 변경 시 필수 절차"를 그대로 따른다.
+
 소유권이 명확한 리소스(로그인한 host_id 기준)는 RLS에서 직접 `auth.uid() = host_id` 또는 조인 서브쿼리로 강제한다 — defense-in-depth 원칙에 따라 Server Action에서도 별도로 소유권을 재검증한다.
 
 ## 비회원 쓰기는 전부 Server Action
