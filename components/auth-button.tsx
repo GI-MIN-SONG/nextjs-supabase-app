@@ -11,9 +11,24 @@ export async function AuthButton() {
 
   const user = data?.claims;
 
+  let isAdmin = false;
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.sub)
+      .single();
+    isAdmin = profile?.role === "admin";
+  }
+
   return user ? (
     <div className="flex items-center gap-4">
       {user.email}님 안녕하세요!
+      {isAdmin && (
+        <Link href="/protected/admin" className="text-sm underline">
+          관리자
+        </Link>
+      )}
       <LogoutButton />
     </div>
   ) : (
