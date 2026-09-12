@@ -201,3 +201,40 @@ RSVP 데이터를 기반으로 정산을 계산하고 주최자·참여자 양�
   - `CLAUDE.md`에 신규 내용 반영: `app/protected/events/*` 및 `app/e/*` 라우트(둘 다 로그인 필수), 4개 신규 테이블, `lib/settlement.ts` 역할
   - 신규 환경 변수가 필요한 경우 README에 기재 (없다면 불필요함을 확인)
   - Vercel 배포 시 공개 링크 절대 URL 생성 기준(사이트 URL 확보 방식) 점검
+
+### Phase 5: 관리자 대시보드 (F022~F025)
+
+서비스 전체를 운영하는 관리자(`profiles.role = 'admin'`)를 위한 대시보드. 기존 주최자/참여자 플로우와 독립적으로 동작하며, `/protected/admin/` 하위에 위치한다.
+
+- **Task 016: profiles.role 컬럼 및 admin RLS·RPC 마이그레이션** - 완료
+  - `profiles.role text not null default 'user' check (role in ('user','admin'))` 컬럼 추가
+  - `events_delete_admin` RLS 정책 추가(관리자는 소유권과 무관하게 이벤트 삭제 가능, 기존 `events_delete_own`과 공존)
+  - `admin_weekly_event_stats`/`admin_monthly_event_stats` RPC 함수 추가(주간/월간 이벤트 생성·RSVP 제출 수 집계)
+  - 초기 관리자로 `songgimin@gmail.com` 지정
+  - `lib/database.types.ts` 재생성, `lib/types/user.ts`에 `UserRole` 타입 추가
+
+- **Task 017: 관리자 라우트 골격 및 접근 가드, 대시보드 지표 구현 (F022)** - 완료
+  - `app/protected/admin/layout.tsx`에서 로그인 여부 확인 후 `profiles.role`을 조회해 관리자가 아니면 404 반환
+  - `AuthButton`에 관리자에게만 보이는 관리자 페이지 링크 추가
+  - 전체 사용자/이벤트/참여자 수, 진행중 이벤트 수를 `count(exact, head)` 쿼리 4개 병렬 실행으로 집계해 카드 표시
+
+- **Task 018: 이벤트 관리 테이블 구현 (F023)** - 완료
+  - `lib/pagination.ts`(신규)로 페이지/정렬 파싱, 검색어 이스케이프 공용 유틸 제공
+  - URL searchParams(`q`, `status`, `page`, `sort`, `dir`) 기반 검색/필터/정렬/페이지네이션
+  - `adminDeleteEvent` Server Action으로 소유권과 무관한 삭제(하위 참여자·정산 CASCADE 삭제)
+  - shadcn `select` 컴포넌트 설치
+
+- **Task 019: 사용자 관리 테이블 구현 (F024)** - 완료
+  - 이메일/이름/아이디 검색, 권한(role) 필터, 정렬, 페이지네이션
+  - 조회 전용(삭제 UI 없음)
+
+- **Task 020: 통계 데이터 집계 및 그래프 구현 (F025)** - 완료
+  - recharts, shadcn `chart` 컴포넌트 설치
+  - `admin_weekly_event_stats`/`admin_monthly_event_stats` RPC 결과를 바 차트로 시각화(최근 12주/6개월)
+
+- **Task 021: 관리자 기능 통합 테스트 및 문서 갱신**
+  - 관리자 로그인 → 대시보드 지표 → 이벤트 관리(검색/필터/정렬/페이지네이션/삭제) → 사용자 관리(검색/필터, 삭제 없음 확인) → 통계 그래프 확인
+  - 비관리자 계정으로 `/protected/admin` 및 하위 전 페이지 접근 시 404 확인
+  - 검색어에 `%`, `,` 등 특수문자 입력 시 서버 에러 없이 처리되는지 확인
+  - 주최자 플로우(이벤트 생성 → 초대 링크 공유 → 참여자 확인), 참여자 플로우(초대 링크 → 로그인 → 자동 복귀 → RSVP 제출)도 함께 회귀 확인
+  - `docs/PRD.md`/`docs/ROADMAP.md`에 F022~F025 반영(완료)
