@@ -111,6 +111,7 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          role: string
           updated_at: string
           username: string | null
           website: string | null
@@ -122,6 +123,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id: string
+          role?: string
           updated_at?: string
           username?: string | null
           website?: string | null
@@ -133,6 +135,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          role?: string
           updated_at?: string
           username?: string | null
           website?: string | null
@@ -227,7 +230,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      admin_monthly_event_stats: {
+        Args: { months_back?: number }
+        Returns: {
+          events_created: number
+          month_start: string
+          rsvps_submitted: number
+        }[]
+      }
+      admin_weekly_event_stats: {
+        Args: { weeks_back?: number }
+        Returns: {
+          events_created: number
+          rsvps_submitted: number
+          week_start: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
