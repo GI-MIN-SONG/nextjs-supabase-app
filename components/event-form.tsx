@@ -12,7 +12,17 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import type { Database } from "@/lib/database.types";
 import { eventStatusLabel } from "@/lib/format";
+import { createClient } from "@/lib/supabase/client";
 import type { EventStatus } from "@/lib/types/event";
+import { cn } from "@/lib/utils";
+
+const MAX_COVER_IMAGE_BYTES = 5 * 1024 * 1024;
+const ALLOWED_COVER_IMAGE_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+];
 
 type EventFormProps =
   | { mode: "create" }
@@ -27,6 +37,7 @@ type EventFormProps =
         | "starts_at"
         | "rsvp_deadline"
         | "status"
+        | "cover_image_url"
       >;
     };
 
@@ -57,9 +68,74 @@ export function EventForm(props: EventFormProps) {
   const [status, setStatus] = useState<EventStatus>(
     props.mode === "edit" ? (props.event.status as EventStatus) : "open",
   );
+  const [coverImageUrl, setCoverImageUrl] = useState(
+    props.mode === "edit" ? (props.event.cover_image_url ?? "") : "",
+  );
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isDraggingImage, setIsDraggingImage] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+
+  const uploadCoverImage = async (file: File) => {
+    setError(null);
+
+    if (!ALLOWED_COVER_IMAGE_TYPES.includes(file.type)) {
+      setError("jpg, png, webp, gif 형식만 업로드할 수 있습니다");
+      return;
+    }
+    if (file.size > MAX_COVER_IMAGE_BYTES) {
+      setError("이미지 파일은 5MB 이하만 업로드할 수 있습니다");
+      return;
+    }
+
+    setIsUploadingImage(true);
+
+    try {
+      const supabase = createClient();
+      const { data: claims } = await supabase.auth.getClaims();
+      const userId = claims?.claims.sub;
+      if (!userId) {
+        throw new Error("로그인이 필요합니다");
+      }
+
+      const extension = file.name.split(".").pop() ?? "jpg";
+      const path = `${userId}/${crypto.randomUUID()}.${extension}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("event-cover-images")
+        .upload(path, file);
+      if (uploadError) {
+        throw new Error(uploadError.message);
+      }
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("event-cover-images").getPublicUrl(path);
+      setCoverImageUrl(publicUrl);
+    } catch (error: unknown) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "이미지 업로드 중 오류가 발생했습니다",
+      );
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  const handleCoverImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (file) void uploadCoverImage(file);
+  };
+
+  const handleCoverImageDrop = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    setIsDraggingImage(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) void uploadCoverImage(file);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,6 +158,7 @@ export function EventForm(props: EventFormProps) {
       formData.set("title", title);
       formData.set("description", description);
       formData.set("location", location);
+      formData.set("coverImageUrl", coverImageUrl);
       formData.set("startsAt", new Date(startsAt).toISOString());
       if (rsvpDeadline) {
         formData.set("rsvpDeadline", new Date(rsvpDeadline).toISOString());
@@ -141,6 +218,51 @@ export function EventForm(props: EventFormProps) {
               />
             </div>
             <div className="grid gap-2">
+              <Label htmlFor="coverImage">커버 이미지 (선택)</Label>
+              <label
+                htmlFor="coverImage"
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setIsDraggingImage(true);
+                }}
+                onDragLeave={() => setIsDraggingImage(false)}
+                onDrop={handleCoverImageDrop}
+                className={cn(
+                  "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-4 text-center transition-colors",
+                  isDraggingImage
+                    ? "border-primary bg-accent"
+                    : "border-input hover:bg-accent",
+                  isUploadingImage && "pointer-events-none opacity-60",
+                )}
+              >
+                {coverImageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={coverImageUrl}
+                    alt="커버 이미지 미리보기"
+                    className="h-32 w-full rounded-lg object-cover"
+                  />
+                ) : (
+                  <p className="text-muted-foreground text-sm">
+                    이미지를 드래그해서 놓거나 클릭해서 선택하세요
+                  </p>
+                )}
+                <p className="text-muted-foreground text-sm">
+                  {isUploadingImage
+                    ? "업로드 중..."
+                    : "클릭해서 다른 이미지 선택"}
+                </p>
+              </label>
+              <Input
+                id="coverImage"
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={handleCoverImageChange}
+                disabled={isUploadingImage}
+                className="sr-only"
+              />
+            </div>
+            <div className="grid gap-2">
               <Label htmlFor="startsAt">일시</Label>
               <Input
                 id="startsAt"
@@ -178,8 +300,8 @@ export function EventForm(props: EventFormProps) {
                 </RadioGroup>
               </div>
             )}
-            {error && <p className="text-sm text-destructive">{error}</p>}
-            <Button type="submit" disabled={isLoading}>
+            {error && <p className="text-destructive text-sm">{error}</p>}
+            <Button type="submit" disabled={isLoading || isUploadingImage}>
               {isLoading
                 ? "저장 중..."
                 : props.mode === "create"

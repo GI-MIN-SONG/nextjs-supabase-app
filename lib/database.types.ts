@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       events: {
         Row: {
+          cover_image_url: string | null
           created_at: string
           description: string | null
           host_id: string
@@ -28,6 +29,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          cover_image_url?: string | null
           created_at?: string
           description?: string | null
           host_id: string
@@ -40,6 +42,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          cover_image_url?: string | null
           created_at?: string
           description?: string | null
           host_id?: string
@@ -64,6 +67,7 @@ export type Database = {
           note: string | null
           status: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           access_token?: string
@@ -75,6 +79,7 @@ export type Database = {
           note?: string | null
           status?: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           access_token?: string
@@ -86,6 +91,7 @@ export type Database = {
           note?: string | null
           status?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {

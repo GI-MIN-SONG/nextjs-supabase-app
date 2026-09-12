@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CopyLinkButton } from "@/components/copy-link-button";
+import { DeleteEventButton } from "@/components/delete-event-button";
 import {
   Table,
   TableBody,
@@ -75,6 +76,14 @@ async function EventDetailContent({
 
       <Card>
         <CardContent className="flex flex-col gap-3 pt-6">
+          {event.cover_image_url && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={event.cover_image_url}
+              alt=""
+              className="h-48 w-full rounded-lg object-cover"
+            />
+          )}
           {event.description && (
             <p className="text-foreground text-sm">{event.description}</p>
           )}
@@ -106,6 +115,7 @@ async function EventDetailContent({
             정산 계산기로 이동
           </Link>
         </Button>
+        <DeleteEventButton eventId={eventId} />
       </div>
 
       <Card>
