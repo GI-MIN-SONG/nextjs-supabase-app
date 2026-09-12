@@ -24,7 +24,13 @@ const statusBadgeVariant: Record<
   cancelled: "outline",
 };
 
-export function EventList({ events }: { events: EventListItem[] }) {
+export function EventList({
+  events,
+  getHref = (event) => `/protected/events/${event.id}`,
+}: {
+  events: EventListItem[];
+  getHref?: (event: EventListItem) => string;
+}) {
   return (
     <div className="flex flex-col gap-6">
       {events.map((event) => {
@@ -35,7 +41,7 @@ export function EventList({ events }: { events: EventListItem[] }) {
         return (
           <Link
             key={event.id}
-            href={`/protected/events/${event.id}`}
+            href={getHref(event)}
             className={cn(
               "bg-card hover:border-primary flex items-center gap-4 rounded-xl border p-4 transition-colors",
               status === "cancelled" && "opacity-60",

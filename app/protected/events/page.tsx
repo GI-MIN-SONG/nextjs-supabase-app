@@ -40,13 +40,13 @@ async function JoinedEventListContent() {
 
   const { data: participantRows } = await supabase
     .from("participants")
-    .select(`event_id, events!inner(${eventSummaryColumns})`)
+    .select(`access_token, events!inner(${eventSummaryColumns})`)
     .eq("user_id", userId ?? "")
     .order("starts_at", { referencedTable: "events", ascending: true });
 
-  const events = participantRows?.map((row) => row.events) ?? [];
+  const rows = participantRows ?? [];
 
-  if (events.length === 0) {
+  if (rows.length === 0) {
     return (
       <div className="text-muted-foreground flex flex-col items-center gap-4 rounded-xl border border-dashed p-10 text-center">
         <p>참여한 모임이 없어요.</p>
@@ -54,7 +54,18 @@ async function JoinedEventListContent() {
     );
   }
 
-  return <EventList events={events} />;
+  const accessTokenByEventId = new Map(
+    rows.map((row) => [row.events.id, row.access_token]),
+  );
+
+  return (
+    <EventList
+      events={rows.map((row) => row.events)}
+      getHref={(event) =>
+        `/e/${event.id}/r/${accessTokenByEventId.get(event.id)}`
+      }
+    />
+  );
 }
 
 export default function EventListPage() {
