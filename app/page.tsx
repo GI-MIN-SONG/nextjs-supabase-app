@@ -46,8 +46,7 @@ async function HomeContent() {
         정산까지 한 번에
       </h1>
       <p className="text-muted-foreground text-sm">
-        참여자 회원가입 없이 링크만 공유해서 참석 여부를 받고, N빵 정산까지
-        끝내보세요.
+        링크만 공유해서 참석 여부를 받고, N빵 정산까지 끝내보세요.
       </p>
       <div className="mt-4 flex flex-col gap-2">
         <Button asChild size="lg">

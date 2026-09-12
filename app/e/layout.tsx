@@ -1,0 +1,41 @@
+import Link from "next/link";
+import { Suspense } from "react";
+
+import { AuthButton } from "@/components/auth-button";
+import { BottomNav } from "@/components/bottom-nav";
+import { EnvVarWarning } from "@/components/env-var-warning";
+import { hasEnvVars } from "@/lib/utils";
+
+export default function ParticipantLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <main className="flex min-h-screen flex-col items-center">
+      <div className="flex w-full flex-1 flex-col items-center gap-20">
+        <nav className="border-b-foreground/10 flex h-16 w-full justify-center border-b">
+          <div className="flex w-full max-w-md items-center justify-between p-3 px-5 text-sm">
+            <div className="flex items-center gap-5 font-semibold">
+              <Link href={"/"}>모임 관리</Link>
+            </div>
+            {!hasEnvVars ? (
+              <EnvVarWarning />
+            ) : (
+              <Suspense>
+                <AuthButton />
+              </Suspense>
+            )}
+          </div>
+        </nav>
+        <div className="flex max-w-md flex-1 flex-col gap-20 p-5 pb-20">
+          {children}
+        </div>
+      </div>
+
+      <Suspense>
+        <BottomNav />
+      </Suspense>
+    </main>
+  );
+}
