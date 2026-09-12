@@ -7,7 +7,7 @@
 모임 이벤트 관리 웹은 수영·헬스·친구 모임 등을 정기적으로 운영하는 **개인 모임 주최자**를 위한 도구로, 다음 기능을 제공합니다:
 
 - **모임 공지 관리**: 모임 생성/조회/수정과 참여자 공개 링크 공유 (F001~F005)
-- **참여자 RSVP 관리**: 참여자가 회원가입 없이 공개 링크로 참석 여부를 응답하고, `access_token`으로 본인 응답만 수정 (F006~F008, F021)
+- **참여자 RSVP 관리**: 참여자가 로그인 후 공개 링크로 참석 여부를 응답하고, `access_token`으로 본인 응답만 수정 (F006~F008, F021)
 - **정산(N빵)**: 총금액을 참여자 수로 나눠 1인당 분담액을 계산하고, 계좌 공유·입금 체크까지 처리 (F009~F012)
 
 ### 현재 상태 (기준선)
@@ -22,7 +22,7 @@
 
 - **폼 패턴**: react-hook-form / zod를 도입하지 않는다. 기존 `components/login-form.tsx` 컨벤션대로 순수 `useState` + `try/catch` 패턴을 유지한다.
 - **Supabase 클라이언트 3분할 유지**: `lib/supabase/client.ts`(브라우저), `lib/supabase/server.ts`(Server Component/Action), `lib/supabase/proxy.ts`(세션 갱신/리다이렉트). `server.ts`의 클라이언트는 전역 변수에 저장하지 않고 함수마다 새로 생성한다.
-- **비회원 쓰기는 전부 Server Action**: RSVP 제출/수정, 정산 저장은 Server Action에서 `access_token`·소유권을 검증한다.
+- **참여자 쓰기는 전부 Server Action**: RSVP 제출/수정, 정산 저장은 Server Action에서 `access_token`·소유권을 검증한다. 참여자 라우트(`/e/`)는 로그인 필수이며 로그인은 `proxy.ts`가 강제한다.
 - **경로 별칭**: `@/*` → 프로젝트 루트. `src/` 디렉토리는 없다.
 - **범위 고정**: PRD의 "MVP 이후 기능(제외)" 항목(카풀 매칭 로직, 결제 연동, 참여자 계정, 알림, 반복 모임, 다중 정산 등)은 이번 로드맵에서 다루지 않는다.
 
@@ -116,9 +116,9 @@
   - 저장 성공 시 모임 상세로 복귀하고 변경 내용이 즉시 반영되도록 캐시 무효화(`revalidatePath`)
   - **테스트 체크리스트**: Playwright MCP로 제목/일시/상태 수정 후 상세 화면 반영 검증, 소유자가 아닌 사용자의 수정 시도 차단 검증
 
-### Phase 2: 참여자 공개 RSVP (F006~F008, F021)
+### Phase 2: 참여자 RSVP (F006~F008, F021)
 
-비로그인 참여자 플로우를 완성하고, 수집된 응답을 주최자 상세 화면에 연결한다.
+참여자 응답 플로우를 완성하고, 수집된 응답을 주최자 상세 화면에 연결한다. (※ 최초 구현 시점에는 비로그인 접근을 허용했으나, 이후 로그인 필수로 전환됨 — Phase 4 "참여자 링크 로그인 필수 전환" 참고)
 
 - **Task 008: 공개 라우트 인증 예외 및 RSVP 랜딩 구현 (F006)**
   - `lib/supabase/proxy.ts`에 `/e/` 경로 인증 예외 추가 (`getClaims()` 호출 전후에 다른 로직을 끼워 넣지 않도록 주의)
@@ -127,7 +127,7 @@
   - 제출 Server Action에서 `access_token` 발급(UUID) 후 `participants` INSERT, 모임 상태가 `open`이 아니거나 마감일이 지난 경우 제출 거부
   - 제출 성공 시 발급된 `access_token`을 `localStorage`에 저장하고 `/e/[eventId]/r/[accessToken]`으로 리다이렉트, 개인 링크 안내 문구 노출
   - 저장된 토큰이 있는 재방문자는 랜딩에서 개인 응답 수정 페이지로 안내
-  - **테스트 체크리스트**: Playwright MCP로 로그아웃 상태에서 `/e/[eventId]` 접근이 로그인으로 리다이렉트되지 않는지 검증, 제출 → 개인 링크 이동 플로우 검증, 200자 초과 메모 거부 검증
+  - **테스트 체크리스트**(당시 기준, 이후 Phase 4에서 로그인 필수로 전환됨): Playwright MCP로 제출 → 개인 링크 이동 플로우 검증, 200자 초과 메모 거부 검증
 
 - **Task 009: 참여자 응답 수정 페이지 구현 (F007, F021)**
   - `app/e/[eventId]/r/[accessToken]/page.tsx`에서 `access_token`으로 참여자 단건 조회, 토큰이 해당 `event_id`에 속하는지 서버에서 검증
@@ -181,6 +181,13 @@ RSVP 데이터를 기반으로 정산을 계산하고 주최자·참여자 양�
 
 ### Phase 4: 다듬기 및 문서화
 
+- **Task 013-2: 참여자 링크 로그인 필수 전환** - 완료
+  - `lib/supabase/proxy.ts`의 `/e/` 인증 예외 제거, 로그인 리다이렉트 시 원래 경로를 `next` 쿼리 파라미터로 실어 `/auth/login`으로 전달
+  - `app/auth/login/page.tsx`에서 `next` searchParams를 읽어 `LoginForm`에 전달, `components/login-form.tsx`가 이메일/비밀번호 로그인 및 Google OAuth 성공 후 `next`로 복귀(기존 `app/auth/callback/route.ts`의 `next` 처리 재사용)
+  - `app/e/[eventId]/actions.ts`의 `submitRsvp`에 로그인 필수 방어 코드 추가(`userId` 없으면 에러). `updateRsvp`는 `access_token` 검증만 유지(로그인 사용자 소유권 재검증은 범위 밖, 별도 후속 검토)
+  - 참여자는 이제 로그인 후에만 `/e/[eventId]`, `/e/[eventId]/r/[accessToken]`에 접근 가능. F005~F008, F021의 "회원가입 없는 참여" 전제를 "로그인 필수 참여"로 변경 (`docs/PRD.md` 반영)
+  - **테스트 체크리스트**: 로그아웃 상태에서 `/e/[eventId]` 접근 시 `/auth/login?next=...`로 리다이렉트되는지 검증, 로그인 후 원래 경로로 정확히 복귀하는지 검증, `/e/[eventId]/r/[accessToken]`에도 동일 흐름 검증, 로그인 상태에서 RSVP 제출/수정 정상 동작 검증
+
 - **Task 014: 빈 상태 및 마감/취소 모임 처리**
   - 모임 목록·참여자 테이블·정산 화면의 빈 상태 UI 정리
   - RSVP 마감일이 지났거나 `status`가 `closed`/`cancelled`인 모임의 공개 페이지 처리 (제출 폼 비활성화 + 안내 문구)
@@ -191,6 +198,6 @@ RSVP 데이터를 기반으로 정산을 계산하고 주최자·참여자 양�
 - **Task 015: 품질 게이트 및 문서 갱신**
   - `npm run lint`, `npm run typecheck`, `npm run test` 전부 통과 확인
   - `npm run format:check` 통과 확인 및 husky/commitlint 훅 정상 동작 확인
-  - `CLAUDE.md`에 신규 내용 반영: `app/protected/events/*` 및 `app/e/*` 라우트, 4개 신규 테이블, `proxy.ts`의 `/e/` 인증 예외 규칙, `lib/settlement.ts` 역할
+  - `CLAUDE.md`에 신규 내용 반영: `app/protected/events/*` 및 `app/e/*` 라우트(둘 다 로그인 필수), 4개 신규 테이블, `lib/settlement.ts` 역할
   - 신규 환경 변수가 필요한 경우 README에 기재 (없다면 불필요함을 확인)
   - Vercel 배포 시 공개 링크 절대 URL 생성 기준(사이트 URL 확보 방식) 점검

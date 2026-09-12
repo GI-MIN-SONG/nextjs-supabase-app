@@ -91,9 +91,10 @@ import { Button } from "../../../components/ui/button";
 
 ## 새 라우트 추가 기준
 
-- 로그인이 필요한 기능 → `app/protected/` 하위
-- 로그인 없이 접근 가능한 공개 기능 → `app/e/` 하위 (모임 참여자 공개 라우트, `docs/supabase.md` 참고) + `lib/supabase/proxy.ts`에 경로 예외 추가 필수
-- `app/protected/` 안에서 접근 제어를 페이지 코드로 직접 구현하지 않는다 — 로그인 여부 검사는 `proxy.ts`가 담당한다. 단 리소스 소유권 검증(`host_id !== auth.uid()`)은 페이지/Server Action에서 별도로 처리해야 한다.
+- 주최자(소유자) 리소스 관리 기능 → `app/protected/` 하위
+- 참여자 개인 응답 라우트(로그인 필수, 소유권 검증은 `access_token` 기준) → `app/e/` 하위 (`docs/supabase.md` 참고)
+- 이 저장소에는 현재 비로그인 접근을 허용하는 예외 경로가 없다 — `app/e/`도 다른 보호 라우트와 동일하게 `proxy.ts`가 로그인을 강제한다. 정말 비로그인 접근이 필요한 라우트를 새로 추가할 때만 `lib/supabase/proxy.ts`에 경로 예외를 추가한다.
+- `app/protected/`, `app/e/` 안에서 접근 제어를 페이지 코드로 직접 구현하지 않는다 — 로그인 여부 검사는 `proxy.ts`가 담당한다. 단 리소스 소유권 검증(`host_id !== auth.uid()`, 참여자 라우트의 `access_token` 일치)은 페이지/Server Action에서 별도로 처리해야 한다.
 
 ## 코드 품질 체크리스트
 

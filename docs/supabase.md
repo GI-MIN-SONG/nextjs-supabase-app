@@ -25,7 +25,9 @@
 
 ### 공개 라우트 추가 시
 
-비로그인 접근을 허용해야 하는 새 공개 라우트(예: 모임 참여자 공개 라우트 `/e/[eventId]`)를 추가할 때는 `lib/supabase/proxy.ts`의 리다이렉트 조건문(`!request.nextUrl.pathname.startsWith("/auth")` 부분)에 해당 경로 prefix 예외를 추가해야 한다. 이 수정 없이 공개 라우트를 추가하면 비로그인 사용자가 `/auth/login`으로 강제 리다이렉트된다.
+`/e/[eventId]`(참여자 라우트)를 포함해 현재 이 저장소에는 비로그인 접근을 허용하는 예외 경로가 없다 — `/login`, `/auth`를 제외한 모든 경로는 로그인을 강제한다. 로그인 리다이렉트 시 원래 요청 경로는 `next` 쿼리 파라미터로 `/auth/login`에 실려가고, 로그인 성공 후 그 경로로 복귀한다(`app/auth/login/page.tsx`, `components/login-form.tsx`, `app/auth/callback/route.ts`가 이 흐름을 처리).
+
+정말 비로그인 접근이 필요한 새 공개 라우트를 추가해야 한다면, `lib/supabase/proxy.ts`의 리다이렉트 조건문(`!request.nextUrl.pathname.startsWith("/auth")` 부분)에 해당 경로 prefix 예외를 추가해야 한다. 이 수정 없이 공개 라우트를 추가하면 비로그인 사용자가 `/auth/login`으로 강제 리다이렉트된다.
 
 ## 인증 흐름
 
@@ -57,12 +59,13 @@
 
 - Task 008/009(참여자 공개 RSVP 제출/수정 Server Action 구현) 착수 시 실제 악용 가능성과 완화책(예: `GRANT UPDATE (status, note, is_excluded_from_settlement) ON participants TO anon`으로 컬럼 제한, 또는 RLS `qual`에 세션 변수 기반 `access_token` 비교 추가)을 재검토한다.
 - 완화책 적용 시에도 원격 프로덕션 DB에 대한 마이그레이션이므로 위 "DB 스키마 변경 시 필수 절차"를 그대로 따른다.
+- (추가 재검토 노트) 참여자 라우트가 로그인 필수로 전환되어 이후 생성되는 모든 `participants` 행은 `user_id`가 채워진다. 따라서 `participants_update_all`을 `using (auth.uid() = user_id)` 등으로 강화하는 것이 이제 현실적으로 가능해졌다. 다만 로그인 필수 전환 이전에 생성된 레거시 행은 `user_id`가 `null`일 수 있어, 강화 시 이 레거시 행의 처리 정책(백필 vs 수정 불가 허용)을 먼저 결정해야 한다. 이 강화 자체는 이번 로그인 필수 전환 작업의 범위에 포함하지 않았고, 별도 마이그레이션 작업으로 분리한다.
 
 소유권이 명확한 리소스(로그인한 host_id 기준)는 RLS에서 직접 `auth.uid() = host_id` 또는 조인 서브쿼리로 강제한다 — defense-in-depth 원칙에 따라 Server Action에서도 별도로 소유권을 재검증한다.
 
-## 비회원 쓰기는 전부 Server Action
+## 참여자 쓰기는 전부 Server Action
 
-참여자 RSVP 제출/수정, 정산 저장 등 계정 없는 사용자가 수행하는 쓰기 작업은 반드시 Server Action에서 처리하고, 클라이언트가 보낸 `event_id`/`participant_id`를 그대로 신뢰해 권한 검증 없이 UPDATE하지 않는다.
+참여자 RSVP 제출/수정, 정산 저장 등의 쓰기 작업은 반드시 Server Action에서 처리하고, 클라이언트가 보낸 `event_id`/`participant_id`를 그대로 신뢰해 권한 검증 없이 UPDATE하지 않는다. 참여자 라우트(`/e/`)는 로그인 필수이지만, 개인 응답 수정(`updateRsvp`)은 로그인 여부와 별개로 `access_token` 일치를 여전히 검증한다 — access_token 자체가 "이 응답의 신원 증명" 역할을 하는 URL이기 때문이다.
 
 ## MCP 사용 규칙
 
