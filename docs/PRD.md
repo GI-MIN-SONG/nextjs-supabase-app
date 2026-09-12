@@ -12,6 +12,7 @@
 
 1. 로그인 페이지 (기존 Supabase Auth)
    ↓ 로그인 성공
+   ↓ 프로필(이름) 미설정 시 프로필 설정 화면으로 강제 이동 → 저장 후 원래 목적지로 복귀
 
 2. 내 모임 목록
    ↓ "새 모임 만들기" 클릭
@@ -313,11 +314,15 @@ app/protected/admin/             — 관리자 전용 (profiles.role = 'admin', 
   events/page.tsx                이벤트 관리 테이블(F023)
   users/page.tsx                 사용자 관리 테이블(F024)
   stats/page.tsx                 통계/그래프(F025)
+
+app/protected/onboarding/        — 프로필 미설정 사용자 강제 이동 라우트
+  page.tsx                       이름 입력 후 저장 시 원래 목적지(next)로 복귀
 ```
 
 - `proxy.ts`(기존 미들웨어 역할)는 `/e/` 경로도 다른 보호 라우트와 동일하게 로그인을 강제한다(예외 없음). 로그인 안 된 상태로 접근하면 `/auth/login?next=원래경로`로 리다이렉트되고, 로그인 성공 후 그 경로로 복귀한다.
 - RSVP 제출/수정, 정산 계산은 모두 Server Action으로 처리하며, 참여자 개인 응답 수정은 로그인 필수 전환 이후에도 `access_token` 검증을 그대로 유지한다(URL 자체가 신원 증명 역할).
 - `app/protected/admin/`은 로그인 여부는 `proxy.ts`가, 관리자 권한 여부는 `app/protected/admin/layout.tsx`가 `profiles.role` 조회로 검증한다(소유권 가드와 같은 성격이라 페이지 레벨에서 처리, `proxy.ts`는 손대지 않음). 비관리자는 404를 받는다.
+- `proxy.ts`는 로그인한 사용자의 `profiles.full_name`이 비어 있으면 `/protected/onboarding?next=원래경로`로 강제 이동시킨다(`/protected/onboarding` 자체는 예외). Google OAuth 가입자는 트리거가 `full_name`을 자동으로 채우므로 대부분 온보딩이 자동 생략되고, 이메일/비밀번호 가입자는 항상 온보딩을 거친다.
 
 ---
 

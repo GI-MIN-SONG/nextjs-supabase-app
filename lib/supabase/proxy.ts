@@ -62,6 +62,25 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // 로그인은 했지만 프로필(이름)을 아직 설정하지 않은 사용자는 온보딩으로 보낸다.
+  // 온보딩 페이지 자체는 예외 처리해 무한 리다이렉트를 피한다.
+  if (user && !request.nextUrl.pathname.startsWith("/protected/onboarding")) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("id", user.sub)
+      .single();
+
+    if (!profile?.full_name) {
+      const url = request.nextUrl.clone();
+      const next = request.nextUrl.pathname + request.nextUrl.search;
+      url.pathname = "/protected/onboarding";
+      url.search = "";
+      url.searchParams.set("next", next);
+      return NextResponse.redirect(url);
+    }
+  }
+
   // IMPORTANT: You *must* return the supabaseResponse object as it is.
   // If you're creating a new response object with NextResponse.next() make sure to:
   // 1. Pass the request in it, like so:
