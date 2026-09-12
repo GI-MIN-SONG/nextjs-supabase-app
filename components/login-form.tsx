@@ -19,8 +19,9 @@ import { useState } from "react";
 
 export function LoginForm({
   className,
+  next,
   ...props
-}: React.ComponentPropsWithoutRef<"div">) {
+}: React.ComponentPropsWithoutRef<"div"> & { next?: string }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +41,7 @@ export function LoginForm({
         password,
       });
       if (error) throw error;
-      router.push("/");
+      router.push(next ?? "/");
     } catch (error: unknown) {
       setError(
         error instanceof Error
@@ -58,10 +59,13 @@ export function LoginForm({
     setError(null);
 
     try {
+      const callbackUrl = new URL(`${window.location.origin}/auth/callback`);
+      if (next) callbackUrl.searchParams.set("next", next);
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: callbackUrl.toString(),
         },
       });
       if (error) throw error;

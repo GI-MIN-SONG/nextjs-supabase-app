@@ -40,6 +40,13 @@ export async function submitRsvp(
     throw new Error("카풀 메모는 200자를 초과할 수 없습니다");
   }
 
+  const { data: claims } = await supabase.auth.getClaims();
+  const userId = claims?.claims.sub;
+
+  if (!userId) {
+    throw new Error("로그인이 필요합니다");
+  }
+
   const { data, error } = await supabase
     .from("participants")
     .insert({
@@ -47,6 +54,7 @@ export async function submitRsvp(
       name,
       status,
       note: note || null,
+      user_id: userId,
     })
     .select("access_token")
     .single();
@@ -77,6 +85,8 @@ export async function updateRsvp(
     throw new Error("카풀 메모는 200자를 초과할 수 없습니다");
   }
 
+  // 개인 응답 수정 링크는 access_token 자체가 신원 증명 역할을 하므로
+  // 로그인 필수 전환 이후에도 access_token 검증만 유지한다.
   const { data, error } = await supabase
     .from("participants")
     .update({
