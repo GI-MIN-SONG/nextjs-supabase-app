@@ -51,15 +51,11 @@
 - 실제 신원 검증(예: `access_token` 일치)은 Server Action의 쿼리 조건(`WHERE id = ? AND access_token = ?`)에서 강제한다.
 - 이는 SELECT가 이미 공개되어 있는 리소스에 한해 적용 가능한 신뢰 경계다 — SELECT 자체가 비공개인 테이블에 이 패턴을 적용하지 않는다.
 
-### 알려진 잔여 위험: `participants` UPDATE RLS 전면 개방
+### `participants` INSERT/UPDATE RLS — `auth.uid() = user_id`로 강화됨
 
-`participants_update_all` 정책은 컬럼/행 단위 제한 없이 `using (true)`로 전면 개방되어 있다. 즉 publishable key로 PostgREST를 직접 호출하면 Server Action의 `access_token` 검증을 완전히 우회해 **임의의 `participant_id`를 지정해 타인의 참여자 레코드(`status`/`note`/`is_excluded_from_settlement` 등)를 수정**할 수 있다 — 이는 위에서 설명한 신뢰 경계 밖의 시나리오다.
+참여자 라우트가 로그인 필수로 전환되어 모든 `participants` 행이 `user_id`(로그인 사용자)를 갖게 된 이후, `participants_insert_all`/`participants_update_all`(`using/check(true)` 전면 개방)을 각각 `participants_insert_own`/`participants_update_own`(`auth.uid() = user_id`)으로 교체했다. 이제 publishable key로 PostgREST를 직접 호출해도 로그인한 본인 소유가 아닌 참여자 레코드는 등록/수정할 수 없다.
 
-이 위험은 MVP 단계에서 의도적으로 감수하는 것으로, 다음 재검토 지점을 둔다:
-
-- Task 008/009(참여자 공개 RSVP 제출/수정 Server Action 구현) 착수 시 실제 악용 가능성과 완화책(예: `GRANT UPDATE (status, note, is_excluded_from_settlement) ON participants TO anon`으로 컬럼 제한, 또는 RLS `qual`에 세션 변수 기반 `access_token` 비교 추가)을 재검토한다.
-- 완화책 적용 시에도 원격 프로덕션 DB에 대한 마이그레이션이므로 위 "DB 스키마 변경 시 필수 절차"를 그대로 따른다.
-- (추가 재검토 노트) 참여자 라우트가 로그인 필수로 전환되어 이후 생성되는 모든 `participants` 행은 `user_id`가 채워진다. 따라서 `participants_update_all`을 `using (auth.uid() = user_id)` 등으로 강화하는 것이 이제 현실적으로 가능해졌다. 다만 로그인 필수 전환 이전에 생성된 레거시 행은 `user_id`가 `null`일 수 있어, 강화 시 이 레거시 행의 처리 정책(백필 vs 수정 불가 허용)을 먼저 결정해야 한다. 이 강화 자체는 이번 로그인 필수 전환 작업의 범위에 포함하지 않았고, 별도 마이그레이션 작업으로 분리한다.
+`updateRsvp` Server Action의 `access_token` 검증은 그대로 유지한다(URL 자체가 신원 증명 역할이라는 기존 설계와, RLS의 `auth.uid() = user_id`가 이중으로 방어하는 구조). `access_token` 링크를 공유받았더라도 그 참여자 레코드를 등록한 계정으로 로그인하지 않으면 수정할 수 없다 — 대리 입력/수정이 필요해지면 이 제약을 재검토해야 한다.
 
 소유권이 명확한 리소스(로그인한 host_id 기준)는 RLS에서 직접 `auth.uid() = host_id` 또는 조인 서브쿼리로 강제한다 — defense-in-depth 원칙에 따라 Server Action에서도 별도로 소유권을 재검증한다.
 
